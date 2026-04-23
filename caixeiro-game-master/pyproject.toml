@@ -1,0 +1,12 @@
+[project]
+name = "caixeiro-game"
+version = "0.1.0"
+description = "Projeto educacional para resolução do TSP via GA e ACO"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "matplotlib>=3.10.8",
+    "numpy>=2.4.4",
+    "pydantic>=2.13.2",
+    "pygame>=2.6.1",
+]
