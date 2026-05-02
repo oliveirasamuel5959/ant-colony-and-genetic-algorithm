@@ -51,7 +51,7 @@ class GeneticAlgorithm(TSPSolver):
         
         # 2. Create new population through selection, crossover, and mutation
         new_population = []
-        for _ in range(self.pop_size):
+        while len(new_population) < self.pop_size:
             parent1 = self.tournament_selection(fitness_scores)
             parent2 = self.tournament_selection(fitness_scores)
             child = self._crossover(parent1, parent2)
