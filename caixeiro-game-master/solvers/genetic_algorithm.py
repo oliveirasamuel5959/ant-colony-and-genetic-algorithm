@@ -45,33 +45,70 @@ class GeneticAlgorithm(TSPSolver):
     def evolve(self) -> None:
         """
         Executa uma geração do Algoritmo Genético.
-        Args:
-            - None
-        Returns:
-            - None
         """
-        # 1. Avaliação de Fitness
-        # 2. Seleção
-        # 3. Cruzamento (Crossover)
-        # 4. Mutação
+        # 1. Calculate fitness scores for current population
+        fitness_scores = [self._calc_fitness(ind) for ind in self.population]
         
-        # TODO: Implementar lógica do aluno
-        # Dica: Atualize self.best_path, self.best_distance e self.history
-        pass
+        # 2. Create new population through selection, crossover, and mutation
+        new_population = []
+        for _ in range(self.pop_size):
+            parent1 = self.tournament_selection(fitness_scores)
+            parent2 = self.tournament_selection(fitness_scores)
+            child = self._crossover(parent1, parent2)
+            child = self._mutate(child)
+            new_population.append(child)
+        
+        # 3. Replace old population
+        self.population = new_population
+        
+        # 4. Update best path and track history
+        for ind in self.population:
+            distance = self.calculate_total_distance(ind)
+            if distance < self.best_distance:
+                self.best_distance = distance
+                self.best_path = ind
+        self.history.append(self.best_distance)
+        
+    def _calc_fitness(self, individual: List[int]) -> float:
+        """Rank-based or linear scaling"""
+        distance = self.calculate_total_distance(individual)
+        # Linear scaling: map to positive range
+        max_dist = max(self.calculate_total_distance(ind) for ind in self.population)
+        return (max_dist - distance + 1) / (max_dist + 1)
+    
+    def tournament_selection(self, score: List[float], k: int = 3) -> List[int]:
+        """
+        Realiza a seleção por torneio.
+        Args:
+            - score (List[float]): Lista de fitness dos indivíduos.
+            - k (int): Número de indivíduos a serem selecionados para o torneio.
+        Returns:
+            - List[int]: Índice do indivíduo selecionado.
+        """
+        selected_indices = np.random.choice(len(self.population), k, replace=False)
+        selected_scores = [score[i] for i in selected_indices]
+        winner_index = selected_indices[np.argmax(selected_scores)]
+        return self.population[winner_index]
 
     def _crossover(self, parent1: List[int], parent2: List[int]) -> List[int]:
-        """
-        Realiza o cruzamento entre dois pais para gerar um filho.
-        Utilize operadores adequados para o TSP (ex: Order Crossover).
-        Args:
-            - parent1 (List[int]): Primeiro pai.
-            - parent2 (List[int]): Segundo pai.
-        Returns:
-            - List[int]: Filho gerado.
-        """
-        # TODO: Implementar lógica do aluno
-        return parent1
-
+        """Order Crossover - TSP-specific, preserves tour order"""
+        size = len(parent1)
+        idx1, idx2 = sorted(np.random.choice(size, 2, replace=False))
+        
+        child = [-1] * size
+        # Copy segment from parent1
+        child[idx1:idx2] = parent1[idx1:idx2]
+        
+        # Fill remaining from parent2 in order
+        p2_idx = 0
+        for i in range(size):
+            if child[i] == -1:
+                while parent2[p2_idx] in child:
+                    p2_idx += 1
+                child[i] = parent2[p2_idx]
+        
+        return child
+    
     def _mutate(self, individual: List[int]) -> List[int]:
         """
         Aplica mutação em um indivíduo (ex: Swap Mutation).
@@ -81,4 +118,18 @@ class GeneticAlgorithm(TSPSolver):
             - List[int]: Indivíduo mutado.
         """
         # TODO: Implementar lógica do aluno
+
+        # Dica: A mutação deve ocorrer com uma probabilidade definida por self.mutation_rate.
+        if np.random.rand() < self.mutation_rate:
+            idx1, idx2 = np.random.choice(len(individual), 2, replace=False)
+            individual[idx1], individual[idx2] = individual[idx2], individual[idx1]
+        
         return individual
+
+# if __name__ == "__main__":
+#     # Exemplo de uso
+#     cities = np.array([[0, 1, 2, 3, 4], [1, 4, 2, 3, 4], [2, 3, 1, 0, 4], [4, 0, 1, 2, 3], [3, 0, 1, 4, 2]])
+#     params = {"pop_size": 50, "mutation_rate": 0.05}
+#     solver = GeneticAlgorithm(cities, params)
+#     solver.evolve()
+#     print(f"Melhor distância = {solver.best_distance}")
