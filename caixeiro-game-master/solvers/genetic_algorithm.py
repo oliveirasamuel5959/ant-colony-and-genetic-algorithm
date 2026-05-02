@@ -136,22 +136,15 @@ class GeneticAlgorithm(TSPSolver):
                 self.best_path = ind
         self.history.append(self.best_distance)
         
+        print(f"Best path: {self.best_path}, Distance: {round(self.best_distance, 3)}")
+        
     def _calc_fitness(self, individual: List[int]) -> float:
-        '''
-        Calcula o fitness de um indivíduo com base na distância total do caminho.
-        Args:
-            - individual (List[int]): Indivíduo representando um caminho (permutação das cidades).
-        Returns:
-            - float: Valor de fitness, onde um valor mais alto indica um caminho melhor (menor distância).
-        '''
-        
-        # A função de fitness é baseada na distância total do caminho representado pelo indivíduo.
+        """Rank-based or linear scaling"""
         distance = self.calculate_total_distance(individual)
+        # Linear scaling: map to positive range
+        max_dist = max(self.calculate_total_distance(ind) for ind in self.population)
+        return (max_dist - distance + 1) / (max_dist + 1)
         
-        # Função de fitness inversa: Quanto menor a distância, maior o fitness
-        # max_dist = max(self.calculate_total_distance(ind) for ind in self.population)
-        
-        return 1 / (distance + 1e-6) if distance > 0 else float('inf') # Evita divisão por zero
     
     def tournament_selection(self, score: List[float], k: int = 3) -> List[int]:
         """
@@ -179,7 +172,7 @@ class GeneticAlgorithm(TSPSolver):
         # PRINT RESULTS FOR TESTES USING PYTEST
         # ========================================
         print(f"Selected indices: {selected_indices}")
-        print(f"Scores: {[round(s, 3) for s in selected_scores]}")
+        print(f"Scores: {selected_scores}")
         print(f"Winner idx: {winner_index}")
         print(f"Winner individual: {self.population[winner_index]}")
         

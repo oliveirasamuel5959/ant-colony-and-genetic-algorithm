@@ -28,4 +28,3 @@ def test_genetic_algorithm():
     
     print("\n!--- Evolução do Algoritmo ---")
     ga_solver.evolve()
-    print(f"Best path: {ga_solver.best_path}, Distance: {round(ga_solver.best_distance, 3)}")
