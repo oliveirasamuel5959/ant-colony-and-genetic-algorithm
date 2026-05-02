@@ -4,7 +4,7 @@ import numpy as np
 
 def test_genetic_algorithm():
     cities = load_from_json("data/cities.json")
-    params = {"pop_size": 50, "mutation_rate": 0.05}
+    params = {"pop_size": 10, "mutation_rate": 0.05}
     
     ga_solver = GeneticAlgorithm(cities, params)
     
@@ -27,7 +27,5 @@ def test_genetic_algorithm():
     # ga_solver._test_mutation()
     
     print("\n!--- Evolução do Algoritmo ---")
-    for gen in range(10):
-        print(f"\n!--- Geração {gen + 1} ---")
-        ga_solver.evolve()
-        print(f"Best path: {ga_solver.best_path}, Distance: {round(ga_solver.best_distance, 3)}")
+    ga_solver.evolve()
+    print(f"Best path: {ga_solver.best_path}, Distance: {round(ga_solver.best_distance, 3)}")

@@ -149,8 +149,9 @@ class GeneticAlgorithm(TSPSolver):
         distance = self.calculate_total_distance(individual)
         
         # Função de fitness inversa: Quanto menor a distância, maior o fitness
-        max_dist = max(self.calculate_total_distance(ind) for ind in self.population)
-        return (max_dist - distance + 1) / (max_dist + 1)
+        # max_dist = max(self.calculate_total_distance(ind) for ind in self.population)
+        
+        return 1 / (distance + 1e-6) if distance > 0 else float('inf') # Evita divisão por zero
     
     def tournament_selection(self, score: List[float], k: int = 3) -> List[int]:
         """
