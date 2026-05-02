@@ -8,6 +8,8 @@ Data: 2026
 Descrição: Implementação de lógica de otimização para o Caixeiro Viajante.
 """
 
+import random
+
 from core.base_solver import TSPSolver
 import numpy as np
 from typing import List, Tuple
@@ -23,7 +25,7 @@ class GeneticAlgorithm(TSPSolver):
         """
         super().__init__(cities, params)
         self.pop_size = params.get("pop_size", 100)
-        self.mutation_rate = params.get("mutation_rate", 0.01)
+        self.mutation_rate = params.get("mutation_rate", 0.05)
         self.population = self._init_population()
         
     def _init_population(self) -> List[List[int]]:
@@ -41,7 +43,72 @@ class GeneticAlgorithm(TSPSolver):
             np.random.shuffle(individual) 
             pop.append(individual)
         return pop 
-
+    
+    def _test_fitness(self) -> None:
+        """Função de teste para verificar a evolução do algoritmo.
+        Esta função executa uma geração do algoritmo e imprime o melhor caminho e distância encontrados.
+        Args:
+            - None
+        Returns:
+            - None
+        """
+        fitness_scores = [self._calc_fitness(ind) for ind in self.population]
+        
+        # sort population by their fitness score
+        order = np.array(sorted([*enumerate(fitness_scores)], key=lambda x: x[1], reverse=True), dtype=int)[:, 0] 
+        self.population = [self.population[i] for i in order]
+        fitness_scores = sorted(fitness_scores, reverse=True)
+        
+        for i in range(len(self.population)):
+            print(f"Individual {i}: {self.population[i]}, Fitness: {round(fitness_scores[i], 3)}")
+            
+    def _test_selection(self) -> None:
+        """Função de teste para verificar a seleção por torneio.
+        Esta função executa a seleção por torneio e imprime o indivíduo selecionado.
+        Args:
+            - None
+        Returns:
+            - None
+        """
+        fitness_scores = [self._calc_fitness(ind) for ind in self.population]
+        
+        parent1 = self.tournament_selection(fitness_scores)
+        parent2 = self.tournament_selection(fitness_scores)
+        
+        print(f"Selected parent 1:\t {parent1}, Fitness: {round(self._calc_fitness(parent1), 3)}")
+        print(f"Selected parent 2:\t {parent2}, Fitness: {round(self._calc_fitness(parent2), 3)}")
+    
+    def _test_crossover(self) -> None:
+        """Função de teste para verificar o crossover.
+        Esta função seleciona dois indivíduos, realiza o crossover e imprime o filho gerado.
+        Args:
+            - None
+        Returns:
+            - None
+        """        
+        parent1 = self.population[random.randint(0, self.pop_size - 1)]
+        parent2 = self.population[random.randint(0, self.pop_size - 1)]
+        
+        child = self._crossover(parent1.copy(), parent2.copy())
+        
+        print(f"Parent 1:\t {parent1}")
+        print(f"Parent 2:\t {parent2}")
+        print(f"Child:\t\t {child}")
+        
+    def _test_mutation(self) -> None:
+        """Função de teste para verificar a mutação.
+        Esta função seleciona um indivíduo, realiza a mutação e imprime o indivíduo mutado.
+        Args:
+            - None
+        Returns:
+            - None
+        """
+        individual = self.population[random.randint(0, self.pop_size - 1)]
+        mutated_individual = self._mutate(individual.copy())
+        
+        print(f"Original Individual:\t {individual}")
+        print(f"Mutated Individual:\t {mutated_individual}")
+    
     def evolve(self) -> None:
         """
         Executa uma geração do Algoritmo Genético.
@@ -70,9 +137,18 @@ class GeneticAlgorithm(TSPSolver):
         self.history.append(self.best_distance)
         
     def _calc_fitness(self, individual: List[int]) -> float:
-        """Rank-based or linear scaling"""
+        '''
+        Calcula o fitness de um indivíduo com base na distância total do caminho.
+        Args:
+            - individual (List[int]): Indivíduo representando um caminho (permutação das cidades).
+        Returns:
+            - float: Valor de fitness, onde um valor mais alto indica um caminho melhor (menor distância).
+        '''
+        
+        # A função de fitness é baseada na distância total do caminho representado pelo indivíduo.
         distance = self.calculate_total_distance(individual)
-        # Linear scaling: map to positive range
+        
+        # Função de fitness inversa: Quanto menor a distância, maior o fitness
         max_dist = max(self.calculate_total_distance(ind) for ind in self.population)
         return (max_dist - distance + 1) / (max_dist + 1)
     
@@ -80,22 +156,49 @@ class GeneticAlgorithm(TSPSolver):
         """
         Realiza a seleção por torneio.
         Args:
-            - score (List[float]): Lista de fitness dos indivíduos.
+            - score (List[float]): Lista de fitness dos indivíduos da população.
             - k (int): Número de indivíduos a serem selecionados para o torneio.
         Returns:
             - List[int]: Índice do indivíduo selecionado.
         """
+        
+        print(f"\n--- Tournament Selection (k={k}) ---")
+        
+        # Seleciona k indivíduos da população aleatoriamente para o torneio
         selected_indices = np.random.choice(len(self.population), k, replace=False)
+        
+        # Obtém os scores dos indivíduos selecionados e determina o vencedor (o de maior fitness)
         selected_scores = [score[i] for i in selected_indices]
+        
+        # O vencedor é o indivíduo com o maior score (fitness)
         winner_index = selected_indices[np.argmax(selected_scores)]
+        
+        # 
+        # ========================================
+        # PRINT RESULTS FOR TESTES USING PYTEST
+        # ========================================
+        print(f"Selected indices: {selected_indices}")
+        print(f"Scores: {[round(s, 3) for s in selected_scores]}")
+        print(f"Winner idx: {winner_index}")
+        print(f"Winner individual: {self.population[winner_index]}")
+        
+        # Retorna o indivíduo vencedor do torneio
         return self.population[winner_index]
 
     def _crossover(self, parent1: List[int], parent2: List[int]) -> List[int]:
-        """Order Crossover - TSP-specific, preserves tour order"""
+        '''Realiza o crossover entre dois indivíduos (ex: Order Crossover).
+        Args:
+            - parent1 (List[int]): Primeiro indivíduo (caminho).
+            - parent2 (List[int]): Segundo indivíduo (caminho).
+        Returns:
+            - List[int]: Filho gerado a partir do crossover dos pais.
+        '''
+        
         size = len(parent1)
         idx1, idx2 = sorted(np.random.choice(size, 2, replace=False))
         
         child = [-1] * size
+        
         # Copy segment from parent1
         child[idx1:idx2] = parent1[idx1:idx2]
         
@@ -107,29 +210,41 @@ class GeneticAlgorithm(TSPSolver):
                     p2_idx += 1
                 child[i] = parent2[p2_idx]
         
+        # 
+        # ========================================
+        # PRINT RESULTS FOR TESTES USING PYTEST
+        # ========================================
+        print(f"\n--- Crossover ---")
+        print(f"Parent 1 segment [{idx1}:{idx2}]: {parent1[idx1:idx2]}")
+        print(f"Parent 2: {parent2}")
+        print(f"Child: {child}")
+        
         return child
     
     def _mutate(self, individual: List[int]) -> List[int]:
-        """
+        '''
         Aplica mutação em um indivíduo (ex: Swap Mutation).
+        
         Args:
             - individual (List[int]): Indivíduo a ser mutado.
         Returns:
             - List[int]: Indivíduo mutado.
-        """
-        # TODO: Implementar lógica do aluno
-
-        # Dica: A mutação deve ocorrer com uma probabilidade definida por self.mutation_rate.
-        if np.random.rand() < self.mutation_rate:
-            idx1, idx2 = np.random.choice(len(individual), 2, replace=False)
+        '''
+        print(f"\n--- Mutation ---")
+        
+        # A mutação deve ocorrer com uma probabilidade definida por self.mutation_rate.
+        original = individual.copy()
+        
+        if random.random() < self.mutation_rate:
+            idx1, idx2 = np.random.choice(len(individual), size=2, replace=False)
             individual[idx1], individual[idx2] = individual[idx2], individual[idx1]
+            # 
+            # ========================================
+            # PRINT RESULTS FOR TESTES USING PYTEST
+            # ========================================
+            print(f"✓ MUTATION: {original} → {individual}\n")
+        else:
+            print(f"✗ NO MUTATION: {individual}\n")
         
         return individual
-
-# if __name__ == "__main__":
-#     # Exemplo de uso
-#     cities = np.array([[0, 1, 2, 3, 4], [1, 4, 2, 3, 4], [2, 3, 1, 0, 4], [4, 0, 1, 2, 3], [3, 0, 1, 4, 2]])
-#     params = {"pop_size": 50, "mutation_rate": 0.05}
-#     solver = GeneticAlgorithm(cities, params)
-#     solver.evolve()
-#     print(f"Melhor distância = {solver.best_distance}")
+        
