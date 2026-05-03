@@ -127,8 +127,8 @@ class GeneticAlgorithm(TSPSolver):
         
         # 4. Fill the rest of population through tournament selection, crossover, and mutation
         while len(new_population) < self.pop_size:
-            parent1 = self.tournament_selection(fitness_scores, k=3)
-            parent2 = self.tournament_selection(fitness_scores, k=3)
+            parent1 = self.tournament_selection(fitness_scores, k=5)
+            parent2 = self.tournament_selection(fitness_scores, k=5)
             # parent1 = self.roulette_wheel_selection(  fitness_scores)
             # parent2 = self.roulette_wheel_selection(fitness_scores)
             child = self._crossover(parent1.copy(), parent2.copy())
