@@ -112,14 +112,14 @@ class GeneticAlgorithm(TSPSolver):
     def evolve(self) -> None:
         """
         Executa uma geração do Algoritmo Genético.
-        Implementa estratégia de elitismo (mantém os 5 melhores indivíduos) 
+        Implementa estratégia de elitismo (mantém os 10% melhores indivíduos) 
         e seleção por torneio para gerar novos indivíduos.
         """
         # 1. Calculate fitness scores for current population
         fitness_scores = [self._calc_fitness(ind) for ind in self.population]
         
-        # 2. Apply elitism - preserve the top 10 elite individuals
-        elite_size = 10
+        # 2. Apply elitism - preserve the top 10% elite individuals
+        elite_size = int(len(self.population) * 0.1)  # 10% da população como elite
         elite_individuals = self._elitism_selection(fitness_scores, elite_size=elite_size)
         
         # 3. Create new population starting with elites
@@ -127,8 +127,10 @@ class GeneticAlgorithm(TSPSolver):
         
         # 4. Fill the rest of population through tournament selection, crossover, and mutation
         while len(new_population) < self.pop_size:
-            parent1 = self.tournament_selection(fitness_scores, k=5)
-            parent2 = self.tournament_selection(fitness_scores, k=5)
+            parent1 = self.tournament_selection(fitness_scores, k=3)
+            parent2 = self.tournament_selection(fitness_scores, k=3)
+            # parent1 = self.roulette_wheel_selection(  fitness_scores)
+            # parent2 = self.roulette_wheel_selection(fitness_scores)
             child = self._crossover(parent1.copy(), parent2.copy())
             child = self._mutate(child)
             new_population.append(child)
@@ -211,6 +213,49 @@ class GeneticAlgorithm(TSPSolver):
         # Retorna o indivíduo vencedor do torneio
         return self.population[winner_index]
 
+    def roulette_wheel_selection(self, score: List[float]) -> List[int]:
+        """
+        Realiza a seleção por roleta (Fitness-Proportionate Selection).
+        Cada indivíduo tem uma probabilidade de seleção proporcional ao seu fitness.
+        
+        Para cada cromossomo x com valor de fitness f_x, a probabilidade de seleção é:
+        p_x = f_x / sum(todos os f_i)
+        
+        Args:
+            - score (List[float]): Lista de fitness dos indivíduos da população.
+        Returns:
+            - List[int]: Indivíduo selecionado pela roleta.
+        """
+        print(f"\n--- Roulette Wheel Selection ---")
+        
+        # Calcula a soma total de fitness
+        fitness_sum = sum(score)
+        
+        # Evita divisão por zero
+        if fitness_sum <= 0:
+            print("Total fitness sum is <= 0. Using uniform selection.")
+            selected_index = np.random.choice(len(self.population))
+            return self.population[selected_index]
+        
+        # Calcula as probabilidades de seleção para cada indivíduo
+        selection_probabilities = np.array(score) / fitness_sum
+        
+        # Seleciona um indivíduo baseado nas probabilidades calculadas
+        selected_index = np.random.choice(len(self.population), p=selection_probabilities)
+        
+        # 
+        # ========================================
+        # PRINT RESULTS FOR TESTES USING PYTEST
+        # ========================================
+        print(f"Fitness scores: {[round(s, 3) for s in score]}")
+        print(f"Total fitness: {round(fitness_sum, 3)}")
+        print(f"Selection probabilities: {[round(p, 3) for p in selection_probabilities]}")
+        print(f"Selected index: {selected_index}")
+        print(f"Selected individual: {self.population[selected_index]}")
+        
+        # Retorna o indivíduo selecionado
+        return self.population[selected_index]
+
     def _crossover(self, parent1: List[int], parent2: List[int]) -> List[int]:
         '''Realiza o crossover entre dois indivíduos (ex: Order Crossover).
         Args:
@@ -262,7 +307,7 @@ class GeneticAlgorithm(TSPSolver):
         original = individual.copy()
         
         if random.random() < self.mutation_rate:
-            idx1, idx2 = np.random.choice(len(individual), size=2, replace=False)
+            idx1, idx2 = np.random.choice(len(individual), size=2)
             individual[idx1], individual[idx2] = individual[idx2], individual[idx1]
             # 
             # ========================================
