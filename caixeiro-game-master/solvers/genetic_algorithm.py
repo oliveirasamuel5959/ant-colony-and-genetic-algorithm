@@ -112,23 +112,34 @@ class GeneticAlgorithm(TSPSolver):
     def evolve(self) -> None:
         """
         Executa uma geração do Algoritmo Genético.
+        Implementa estratégia de elitismo (mantém os 5 melhores indivíduos) 
+        e seleção por torneio com probabilidades de fitness para gerar novos indivíduos.
         """
-        # 1. Calculate fitness scores for current population
-        fitness_scores = [self._calc_fitness(ind) for ind in self.population]
+        # 1. Calculate distances for all individuals (needed for elitism)
+        distances = [self.calculate_total_distance(ind) for ind in self.population]
         
-        # 2. Create new population through selection, crossover, and mutation
-        new_population = []
+        # 2. Calculate fitness probabilities for tournament selection
+        fitness_probs = self._calculate_population_fitness_probabilities()
+        
+        # 3. Apply elitism - preserve the top 5 elite individuals
+        elite_size = 5
+        elite_individuals = self._elitism_selection(fitness_probs, elite_size=elite_size)
+        
+        # 4. Create new population starting with elites
+        new_population = [ind.copy() for ind in elite_individuals]
+        
+        # 5. Fill the rest of population through tournament selection, crossover, and mutation
         while len(new_population) < self.pop_size:
-            parent1 = self.tournament_selection(fitness_scores)
-            parent2 = self.tournament_selection(fitness_scores)
-            child = self._crossover(parent1, parent2)
+            parent1 = self.tournament_selection(fitness_probs, k=7)
+            parent2 = self.tournament_selection(fitness_probs, k=7)
+            child = self._crossover(parent1.copy(), parent2.copy())
             child = self._mutate(child)
             new_population.append(child)
         
-        # 3. Replace old population
+        # 6. Replace old population
         self.population = new_population
         
-        # 4. Update best path and track history
+        # 7. Update best path and track history
         for ind in self.population:
             distance = self.calculate_total_distance(ind)
             if distance < self.best_distance:
@@ -139,12 +150,61 @@ class GeneticAlgorithm(TSPSolver):
         print(f"Best path: {self.best_path}, Distance: {round(self.best_distance, 3)}")
         
     def _calc_fitness(self, individual: List[int]) -> float:
-        """Rank-based or linear scaling"""
+        """Calculate fitness for a single individual based on distance."""
         distance = self.calculate_total_distance(individual)
-        # Linear scaling: map to positive range
-        max_dist = max(self.calculate_total_distance(ind) for ind in self.population)
-        return (max_dist - distance + 1) / (max_dist + 1)
+        return distance
+    
+    def _calculate_population_fitness_probabilities(self) -> np.ndarray:
+        """
+        Calculates fitness probabilities for the entire population.
+        Uses inverse distance scaling: fitness = max_distance - individual_distance
+        Normalizes to create probability distribution across population.
         
+        Returns:
+            np.ndarray: Array of fitness probabilities for each individual in population
+        """
+        # Calculate total distance for all individuals
+        total_distances = np.array([self.calculate_total_distance(ind) for ind in self.population])
+        
+        # Find max distance (worst individual)
+        max_distance = np.max(total_distances)
+        
+        # Calculate fitness: max_distance - individual_distance (higher is better)
+        population_fitness = max_distance - total_distances
+        
+        # Normalize to create probabilities (sum = 1.0)
+        fitness_sum = np.sum(population_fitness)
+        if fitness_sum > 0:
+            population_fitness_probs = population_fitness / fitness_sum
+        else:
+            # Fallback if all fitness values are equal
+            population_fitness_probs = np.ones(len(self.population)) / len(self.population)
+        
+        return population_fitness_probs
+        
+    def _elitism_selection(self, score: List[float], elite_size: int = 10) -> List[List[int]]:
+        """
+        Realiza a seleção por elitismo, onde os melhores indivíduos são automaticamente selecionados para a próxima geração.
+        Args:
+            - score (List[float]): Lista de fitness dos indivíduos da população.
+            - elite_size (int): Número de indivíduos a serem mantidos como elite.
+        Returns:
+            - List[List[int]]: Lista dos indivíduos selecionados como elite.
+        """
+        print(f"\n--- Elitism Selection (elite_size={elite_size}) ---")
+        
+        # Ordena os indivíduos pela fitness e seleciona os top elite_size
+        elite_indices = np.argsort(score)[-elite_size:]
+        elite_individuals = [self.population[i] for i in elite_indices]
+        
+        # 
+        # ========================================
+        # PRINT RESULTS FOR TESTES USING PYTEST
+        # ========================================
+        print(f"Elite indices: {elite_indices}")
+        print(f"Elite individuals: {elite_individuals}")
+        
+        return elite_individuals
     
     def tournament_selection(self, score: List[float], k: int = 3) -> List[int]:
         """
