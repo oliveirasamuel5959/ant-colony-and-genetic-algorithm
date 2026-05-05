@@ -119,7 +119,7 @@ class GeneticAlgorithm(TSPSolver):
         fitness_scores = [self._calc_fitness(ind) for ind in self.population]
         
         # 2. Apply elitism - preserve the top 10% elite individuals
-        elite_size = int(len(self.population) * 0.1)  # 10% da população como elite
+        elite_size = int(len(self.population) * 0.2)  # 10% da população como elite
         elite_individuals = self._elitism_selection(fitness_scores, elite_size=elite_size)
         
         # 3. Create new population starting with elites
@@ -127,12 +127,17 @@ class GeneticAlgorithm(TSPSolver):
         
         # 4. Fill the rest of population through tournament selection, crossover, and mutation
         while len(new_population) < self.pop_size:
+            # Selecione os pais usando seleção por torneio
             parent1 = self.tournament_selection(fitness_scores, k=5)
             parent2 = self.tournament_selection(fitness_scores, k=5)
-            # parent1 = self.roulette_wheel_selection(  fitness_scores)
-            # parent2 = self.roulette_wheel_selection(fitness_scores)
+            
+            # Realize o crossover para gerar um filho
             child = self._crossover(parent1.copy(), parent2.copy())
+            
+            # Aplique mutação no filho
             child = self._mutate(child)
+            
+            # Adicione o filho à nova população
             new_population.append(child)
         
         # 5. Replace old population
@@ -149,11 +154,13 @@ class GeneticAlgorithm(TSPSolver):
         print(f"Best path: {self.best_path}, Distance: {round(self.best_distance, 3)}")
         
     def _calc_fitness(self, individual: List[int]) -> float:
-        """Rank-based or linear scaling"""
+        # calcula a distancia total do caminho
         distance = self.calculate_total_distance(individual)
         
         # Linear scaling: map to positive range
         max_dist = max(self.calculate_total_distance(ind) for ind in self.population)
+        
+        # retorna o fitness (quanto menor a distância, maior o fitness)
         return (max_dist - distance + 1) / (max_dist + 1)
         
     def _elitism_selection(self, score: List[float], elite_size: int = 10) -> List[List[int]]:

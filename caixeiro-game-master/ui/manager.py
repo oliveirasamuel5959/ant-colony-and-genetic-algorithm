@@ -38,12 +38,12 @@ class UIManager:
         
         # Hiperparâmetros padrão
         self.params = {
-            "pop_size": 200,
-            "mutation_rate": 0.1,
-            "num_ants": 20,
+            "pop_size": 150,
+            "mutation_rate": 0.03,
+            "num_ants": 40,
             "alpha": 1.0,
-            "beta": 5.0,
-            "evaporation": 0.3
+            "beta": 2.0,
+            "evaporation": 0.25
         }
         
         self.running_simulation = False
@@ -82,24 +82,48 @@ class UIManager:
             if event.key == pygame.K_1: self.state = State.SETUP
             
             if event.key == pygame.K_2: 
-                self.setup_solvers(State.GA), 
+                self.setup_solvers(State.GA),
+                
+                # Save current path for GA convergence plots 
                 self.curr_path = Path(self.ago_path)
+                
+                # Name of the algorithm for plot titles and filenames
                 self.algo_name = "ago"
+                
+                # Dynamic title based on current parameters
                 self.title = f"Gráfico de Convergência: {len(self.cities)} cidades - {self.params.get('pop_size')} população - {self.params.get('mutation_rate')*100}% mutação"
+                
+                # Dynamic filename for GA convergence plot
                 self.filename = f"pop_size_{self.params.get('pop_size')}_cities_{len(self.cities)}_convergence_plot.png"
                 
             if event.key == pygame.K_3: 
-                self.setup_solvers(State.ACO), 
+                self.setup_solvers(State.ACO),
+                
+                # Save current path for ACO convergence plots 
                 self.curr_path = Path(self.aco_path)
+                
+                # Name of the algorithm for plot titles and filenames
                 self.algo_name = "aco"
-                self.title = f"Gráfico de Convergência: {len(self.cities)} cidades - {self.params.get('num_ants')} formigas - α: {self.params.get('alpha')} β: {self.params.get('beta')}"
+                
+                # Dynamic title based on current parameters
+                self.title = f"Gráfico de Convergência: {len(self.cities)} cidades - {self.params.get('num_ants')} formigas - α: {self.params.get('alpha')} - β: {self.params.get('beta')} - evap: {self.params.get('evaporation')}"
+                
+                # Dynamic filename for ACO convergence plot
                 self.filename = f"ants_{self.params.get('num_ants')}_cities_{len(self.cities)}_convergence_plot.png"
                 
             if event.key == pygame.K_4: 
                 self.setup_solvers(State.COMPARISON)
+                
+                # Save current path for comparison convergence plots (can be same as logs_path or a separate folder)
                 self.curr_path = Path(self.logs_path)
+                
+                # Name of the algorithm for plot titles and filenames
                 self.algo_name = "comparison"
-                self.title = f"Gráfico de Convergência Comparativo: {len(self.cities)} cidades - GA Pop: {self.params.get('pop_size')} Mut: {self.params.get('mutation_rate')*100}% | ACO Formigas: {self.params.get('num_ants')} α: {self.params.get('alpha')} β: {self.params.get('beta')}"
+                
+                # Dynamic title based on current parameters for comparison mode
+                self.title = f"Gráfico de Convergência Comparativo: {len(self.cities)} cidades - GA Pop: {self.params.get('pop_size')} - Mut: {self.params.get('mutation_rate')*100}% | ACO Formigas: {self.params.get('num_ants')} - α: {self.params.get('alpha')} - β: {self.params.get('beta')} - evap: {self.params.get('evaporation')}"
+                
+                # Dynamic filename for comparison convergence plot
                 self.filename = f"comparison_cities_{len(self.cities)}_pop_{self.params.get('pop_size')}_ants_{self.params.get('num_ants')}_convergence_plot.png"
             
             if event.key == pygame.K_SPACE: self.running_simulation = not self.running_simulation
@@ -109,12 +133,16 @@ class UIManager:
             if event.key == pygame.K_g: self.generate_new_dataset(20)
             
             if event.key == pygame.K_s:
+                
+                # Salva o gráfico de convergência usando a função utilitária, passando o DataFrame de histórico atualizado
                 save_history_and_plots(
                 self.history,
                 algo=self.algo_name,
                 title=self.title, 
                 filename=self.curr_path / self.filename
-            ), print(f"Gráfico de convergência salvo em: {self.curr_path / self.filename}")
+            ), 
+            # 
+            print(f"Gráfico de convergência salvo em: {self.curr_path / self.filename}")
 
     def generate_new_dataset(self, num_cities: int):
         """Gera um novo dataset, salva no JSON e recarrega na memória."""
