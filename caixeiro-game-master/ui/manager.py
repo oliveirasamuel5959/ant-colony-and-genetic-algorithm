@@ -34,9 +34,9 @@ class UIManager:
         
         # Hiperparâmetros padrão
         self.params = {
-            "pop_size": 150,
-            "mutation_rate": 0.03,
-            "num_ants": 10,
+            "pop_size": 200,
+            "mutation_rate": 0.1,
+            "num_ants": 20,
             "alpha": 1.0,
             "beta": 2.0,
             "evaporation": 0.1
