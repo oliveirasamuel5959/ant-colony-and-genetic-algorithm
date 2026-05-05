@@ -1,12 +1,16 @@
+import os
 import pygame
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 from enum import Enum
 from typing import List, Optional, Dict, Any
+from pathlib import Path
 from solvers.genetic_algorithm import GeneticAlgorithm
 from solvers.aco_solver import AntColonySolver
 from data.loader import generate_random_cities, load_from_json
+from utils.Plots import save_history_and_plots
 
 class State(Enum):
     SETUP = 1
@@ -34,8 +38,8 @@ class UIManager:
         
         # Hiperparâmetros padrão
         self.params = {
-            "pop_size": 150,
-            "mutation_rate": 0.08,
+            "pop_size": 200,
+            "mutation_rate": 0.1,
             "num_ants": 20,
             "alpha": 1.0,
             "beta": 5.0,
@@ -43,16 +47,74 @@ class UIManager:
         }
         
         self.running_simulation = False
+        
+        #
+        # ===================================================
+        # Create logs directory if it doesn't exist for ago and aco
+        # ===================================================
+        self.ago_history_log = []
+        self.aco_history_log = []
+        self._ago_last_iter = 0
+        self._aco_last_iter = 0
+        
+        self.algo_name = ""
+        self.title = ""
+        self.filename = ""
+        self.curr_path = None
+        
+        # DataFrames para armazenar o histórico de ambos os algoritmos
+        self.history = pd.DataFrame(columns=["iterations", "ago_best_distance", "aco_best_distance"])
+        
+        # Diretório para salvar os gráficos de convergência
+        self.logs_path = Path(__file__).parent.parent / "logs"
+        self.ago_path = self.logs_path / "ago"
+        self.aco_path = self.logs_path / "aco"
+        
+        if not self.logs_path.exists():
+            self.logs_path.mkdir(parents=True, exist_ok=True)
+        if not self.ago_path.exists():
+            self.ago_path.mkdir(parents=True, exist_ok=True)
+        if not self.aco_path.exists():
+            self.aco_path.mkdir(parents=True, exist_ok=True)
 
     def handle_event(self, event: pygame.event.Event):
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_1: self.state = State.SETUP
-            if event.key == pygame.K_2: self.setup_solvers(State.GA)
-            if event.key == pygame.K_3: self.setup_solvers(State.ACO)
-            if event.key == pygame.K_4: self.setup_solvers(State.COMPARISON)
+            
+            if event.key == pygame.K_2: 
+                self.setup_solvers(State.GA), 
+                self.curr_path = Path(self.ago_path)
+                self.algo_name = "ago"
+                self.title = f"Gráfico de Convergência: {len(self.cities)} cidades - {self.params.get('pop_size')} população - {self.params.get('mutation_rate')*100}% mutação"
+                self.filename = f"pop_size_{self.params.get('pop_size')}_cities_{len(self.cities)}_convergence_plot.png"
+                
+            if event.key == pygame.K_3: 
+                self.setup_solvers(State.ACO), 
+                self.curr_path = Path(self.aco_path)
+                self.algo_name = "aco"
+                self.title = f"Gráfico de Convergência: {len(self.cities)} cidades - {self.params.get('num_ants')} formigas - α: {self.params.get('alpha')} β: {self.params.get('beta')}"
+                self.filename = f"ants_{self.params.get('num_ants')}_cities_{len(self.cities)}_convergence_plot.png"
+                
+            if event.key == pygame.K_4: 
+                self.setup_solvers(State.COMPARISON)
+                self.curr_path = Path(self.logs_path)
+                self.algo_name = "comparison"
+                self.title = f"Gráfico de Convergência Comparativo: {len(self.cities)} cidades - GA Pop: {self.params.get('pop_size')} Mut: {self.params.get('mutation_rate')*100}% | ACO Formigas: {self.params.get('num_ants')} α: {self.params.get('alpha')} β: {self.params.get('beta')}"
+                self.filename = f"comparison_cities_{len(self.cities)}_pop_{self.params.get('pop_size')}_ants_{self.params.get('num_ants')}_convergence_plot.png"
+            
             if event.key == pygame.K_SPACE: self.running_simulation = not self.running_simulation
+            
             if event.key == pygame.K_r: self.reset_simulation()
+            
             if event.key == pygame.K_g: self.generate_new_dataset(20)
+            
+            if event.key == pygame.K_s:
+                save_history_and_plots(
+                self.history,
+                algo=self.algo_name,
+                title=self.title, 
+                filename=self.curr_path / self.filename
+            ), print(f"Gráfico de convergência salvo em: {self.curr_path / self.filename}")
 
     def generate_new_dataset(self, num_cities: int):
         """Gera um novo dataset, salva no JSON e recarrega na memória."""
@@ -64,6 +126,12 @@ class UIManager:
     def setup_solvers(self, state: State):
         self.state = state
         self.running_simulation = False
+        # Reset history logs and last-logged iteration counters
+        self.ago_history_log = []
+        self.aco_history_log = []
+        self._ago_last_iter = 0
+        self._aco_last_iter = 0
+        self.history = pd.DataFrame(columns=["iterations", "ago_best_distance", "aco_best_distance"])
         if state in [State.GA, State.COMPARISON]:
             self.ga_solver = GeneticAlgorithm(self.cities, self.params)
         if state in [State.ACO, State.COMPARISON]:
@@ -92,14 +160,14 @@ class UIManager:
         if self.state == State.SETUP:
             self._draw_setup()
         elif self.state == State.GA:
-            self._draw_solver_state(self.ga_solver, "Algoritmo Genético", (0, 0, self.width, self.height))
+            self._draw_solver_state(self.ga_solver, "Algoritmo Genético", (0, 0, self.width, self.height), algo="ago")
         elif self.state == State.ACO:
-            self._draw_solver_state(self.aco_solver, "Colônia de Formigas", (0, 0, self.width, self.height), draw_pheromones=True)
+            self._draw_solver_state(self.aco_solver, "Colônia de Formigas", (0, 0, self.width, self.height), draw_pheromones=True, algo="aco")
         elif self.state == State.COMPARISON:
             # Divisória central
             pygame.draw.line(self.screen, (60, 60, 70), (self.width // 2, 50), (self.width // 2, self.height - 100), 2)
-            self._draw_solver_state(self.ga_solver, "Algoritmo Genético (GA)", (0, 0, self.width//2, self.height))
-            self._draw_solver_state(self.aco_solver, "Colônia de Formigas (ACO)", (self.width//2, 0, self.width//2, self.height), draw_pheromones=True)
+            self._draw_solver_state(self.ga_solver, "Algoritmo Genético (GA)", (0, 0, self.width//2, self.height), algo="ago")
+            self._draw_solver_state(self.aco_solver, "Colônia de Formigas (ACO)", (self.width//2, 0, self.width//2, self.height), draw_pheromones=True, algo="aco")
         
         self._draw_footer()
         pygame.display.flip()
@@ -119,6 +187,7 @@ class UIManager:
             "  [ESPAÇO] Iniciar / Pausar Evolução",
             "  [R] Reiniciar Solvers Atuais",
             "  [G] Gerar Novo Dataset (20 cidades)",
+            "  [S] Salvar Gráfico de Convergência",
             "",
             "Configurações Atuais:",
             f"  Cidades no Dataset: {len(self.cities)}",
@@ -131,7 +200,7 @@ class UIManager:
             surf = self.font.render(text, True, color)
             self.screen.blit(surf, (self.width//2 - 250, 200 + i*35))
 
-    def _draw_solver_state(self, solver: Any, title: str, rect: tuple, draw_pheromones=False):
+    def _draw_solver_state(self, solver: Any, title: str, rect: tuple, draw_pheromones=False, algo: str = "ago"):
         x, y, w, h = rect
         padding = 40
         
@@ -150,7 +219,7 @@ class UIManager:
             
             self._draw_path(solver, draw_area)
             self._draw_cities(solver.cities, draw_area)
-            self._draw_stats(solver, (x + padding, h - graph_h - stats_h - 30))
+            self._draw_stats(solver, (x + padding, h - graph_h - stats_h - 30), algo=algo)
             self._draw_graph(solver.get_history(), (x + w//2, h - 80), w - 2*padding, graph_h)
 
     def _draw_cities(self, cities: np.ndarray, area: tuple):
@@ -223,10 +292,31 @@ class UIManager:
                     color_val = int(strength * 150)
                     pygame.draw.line(self.screen, (50, 50, 100 + color_val), p1, p2, max(1, int(strength * 4)))
 
-    def _draw_stats(self, solver: Any, pos: tuple):
+    def _draw_stats(self, solver: Any, pos: tuple, algo: str = "ago"):
         path = solver.get_best_path()
         dist = solver.calculate_total_distance(path) if path else 0
         iter_count = len(solver.get_history())
+
+        # Only append when the solver has completed a new iteration
+        if algo == "aco":
+            if iter_count > self._aco_last_iter:
+                self.aco_history_log.append(dist)
+                self._aco_last_iter = iter_count
+        else:
+            if iter_count > self._ago_last_iter:
+                self.ago_history_log.append(dist)
+                self._ago_last_iter = iter_count
+
+        # Build DataFrame; x-axis = actual solver iteration number (1, 2, 3, ...)
+        n = max(len(self.aco_history_log), len(self.ago_history_log))
+        aco_col = self.aco_history_log + [None] * (n - len(self.aco_history_log))
+        ago_col = self.ago_history_log + [None] * (n - len(self.ago_history_log))
+
+        self.history = pd.DataFrame({
+            "iterations": list(range(1, n + 1)),
+            "aco_best_distance": aco_col,
+            "ago_best_distance": ago_col,
+        })
         
         stats = [
             f"Melhor Distância: {dist:.2f}",
