@@ -85,7 +85,11 @@ O ACO simula o comportamento de formigas reais:
 ## 📈 Geração de Gráficos e Análise
 
 ### Como Usar os Gráficos
-Ao executar uma simulação (GA, ACO ou Comparação), os gráficos de convergência são automaticamente salvos ao pressionar `1` (Setup) após terminar as iterações/gerações. Esses gráficos mostram a evolução da melhor distância encontrada ao longo do tempo.
+Ao executar uma simulação (GA, ACO ou Comparação), após terminar as iterações/gerações, siga os passos:
+1. Pressione `1` para abrir o menu de **Configuração (Setup)**.
+2. No menu, pressione `[S]` para **Salvar Gráficos de Convergência**.
+
+Os gráficos mostram a evolução da melhor distância encontrada ao longo do tempo e são salvos automaticamente nas pastas correspondentes.
 
 ### Tipos de Gráficos Gerados
 - **Gráfico de Convergência (GA)**: Visualiza como o Algoritmo Genético melhora a solução a cada geração (eixo X = gerações, eixo Y = melhor distância).
