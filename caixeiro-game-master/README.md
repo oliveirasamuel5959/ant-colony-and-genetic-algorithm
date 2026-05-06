@@ -60,6 +60,7 @@ Ao executar o simulador, utilize as seguintes teclas:
     - `ESPAÇO`: Iniciar / Pausar a evolução.
     - `R`: Resetar a simulação atual (reinicia os solvers com parâmetros iniciais).
     - `G`: Gerar um novo dataset aleatório (salva em `data/cities.json`).
+    - `S`: Salvar Gráfico de Convergência. 
 
 ## 📊 Visualização
 O simulador exibe:
