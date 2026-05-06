@@ -68,6 +68,44 @@ O simulador exibe:
 - Um gráfico de convergência (Distância vs. Iteração).
 - Estatísticas de performance comparativas.
 
+## 🔬 Detalhes dos Algoritmos Implementados
+
+### Algoritmo Genético (`solvers/genetic_algorithm.py`)
+O GA implementa uma abordagem evolutiva para o TSP:
+- **Evolução**: A cada geração, seleciona os melhores indivíduos, aplica cruzamento (Order Crossover) e mutação (Swap Mutation) para gerar novos descendentes.
+- **Seleção**: Escolhe os indivíduos com menor distância total do caminho.
+- **Cruzamento e Mutação**: Cria diversidade genética mantendo características dos melhores candidatos.
+
+### Colônia de Formigas (`solvers/aco_solver.py`)
+O ACO simula o comportamento de formigas reais:
+- **Movimentação**: Cada formiga constrói um caminho usando regra de transição probabilística baseada em feromônios (α) e visibilidade (β).
+- **Atualização de Feromônios**: Após cada iteração, formigas depositam feromônios nos caminhos percorridos, com evaporação de feromônios antigos.
+- **Convergência**: O algoritmo tende a convergir para boas soluções à medida que feromônios se acumulam em caminhos promissores.
+
+## 📈 Geração de Gráficos e Análise
+
+### Como Usar os Gráficos
+Ao executar uma simulação (GA, ACO ou Comparação), os gráficos de convergência são automaticamente salvos ao pressionar `1` (Setup) após terminar as iterações/gerações. Esses gráficos mostram a evolução da melhor distância encontrada ao longo do tempo.
+
+### Tipos de Gráficos Gerados
+- **Gráfico de Convergência (GA)**: Visualiza como o Algoritmo Genético melhora a solução a cada geração (eixo X = gerações, eixo Y = melhor distância).
+- **Gráfico de Convergência (ACO)**: Visualiza como a Colônia de Formigas melhora a solução a cada iteração (eixo X = iterações, eixo Y = melhor distância).
+- **Gráfico Comparativo**: Exibe ambos os algoritmos em um único gráfico, permitindo comparar suas velocidades de convergência e qualidade final das soluções.
+
+### Estrutura de Logs
+Quando você executa os modos **GA** (`2`), **ACO** (`3`) ou **Comparação** (`4`), um diretório `logs/` é automaticamente criado na raiz do projeto com a seguinte estrutura:
+
+```
+logs/
+├── ago/              # Gráficos do Algoritmo Genético (GA)
+│   └── *.png        # Convergence plots com diferentes parâmetros
+├── aco/              # Gráficos da Colônia de Formigas (ACO)
+│   └── *.png        # Convergence plots com diferentes parâmetros
+└── *.png            # Gráficos comparativos (GA vs ACO)
+```
+
+Os arquivos de imagem são nomeados dinamicamente com base nos parâmetros utilizados, facilitando a comparação entre diferentes execuções.
+
 ---
 **Professor:** Rafael Gomes Alves  
 **Instituição:** Centro Universitário FEI  
