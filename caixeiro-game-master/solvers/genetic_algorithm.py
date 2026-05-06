@@ -119,7 +119,7 @@ class GeneticAlgorithm(TSPSolver):
         fitness_scores = [self._calc_fitness(ind) for ind in self.population]
         
         # 2. Apply elitism - preserve the top 10% elite individuals
-        elite_size = int(len(self.population) * 0.2)  # 10% da população como elite
+        elite_size = int(len(self.population) * 0.30)  # 10% da população como elite
         elite_individuals = self._elitism_selection(fitness_scores, elite_size=elite_size)
         
         # 3. Create new population starting with elites

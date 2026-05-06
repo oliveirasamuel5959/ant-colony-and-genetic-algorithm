@@ -38,12 +38,12 @@ class UIManager:
         
         # Hiperparâmetros padrão
         self.params = {
-            "pop_size": 150,
-            "mutation_rate": 0.03,
-            "num_ants": 40,
+            "pop_size": 300,
+            "mutation_rate": 0.5,
+            "num_ants": 30,
             "alpha": 1.0,
-            "beta": 2.0,
-            "evaporation": 0.25
+            "beta": 3.0,
+            "evaporation": 0.7
         }
         
         self.running_simulation = False
@@ -91,9 +91,9 @@ class UIManager:
                 self.algo_name = "ago"
                 
                 # Dynamic title based on current parameters
-                self.title = f"Gráfico de Convergência: {len(self.cities)} cidades - {self.params.get('pop_size')} população - {self.params.get('mutation_rate')*100}% mutação"
+                self.title = f"Gráfico de Convergência: {len(self.cities)} cidades - {self.params.get('pop_size')} população - {self.params.get('mutation_rate')} mutação"
                 
-                # Dynamic filename for GA convergence plot
+                # Dynamic filename for GA convergence pPlot
                 self.filename = f"pop_size_{self.params.get('pop_size')}_cities_{len(self.cities)}_convergence_plot.png"
                 
             if event.key == pygame.K_3: 
@@ -121,7 +121,7 @@ class UIManager:
                 self.algo_name = "comparison"
                 
                 # Dynamic title based on current parameters for comparison mode
-                self.title = f"Gráfico de Convergência Comparativo: {len(self.cities)} cidades - GA Pop: {self.params.get('pop_size')} - Mut: {self.params.get('mutation_rate')*100}% | ACO Formigas: {self.params.get('num_ants')} - α: {self.params.get('alpha')} - β: {self.params.get('beta')} - evap: {self.params.get('evaporation')}"
+                self.title = f"Gráfico de Convergência Comparativo: {len(self.cities)} cidades - GA Pop: {self.params.get('pop_size')} - Mut: {self.params.get('mutation_rate')} | ACO Formigas: {self.params.get('num_ants')} - α: {self.params.get('alpha')} - β: {self.params.get('beta')} - evap: {self.params.get('evaporation')}"
                 
                 # Dynamic filename for comparison convergence plot
                 self.filename = f"comparison_cities_{len(self.cities)}_pop_{self.params.get('pop_size')}_ants_{self.params.get('num_ants')}_convergence_plot.png"
